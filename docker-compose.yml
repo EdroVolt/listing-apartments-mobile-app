@@ -1,0 +1,60 @@
+services:
+  backend:
+    image: edrovolt/listing-apartments
+    restart: always
+    container_name: listing-apartments-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - DATABASE_URL=mongodb://mongo:27017/listingApartmentsDB
+    depends_on:
+      - mongo
+    networks:
+      - my-network
+
+  mongo:
+    image: mongo:latest
+    restart: always
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - my-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=development
+    container_name: listing-apartments-mobile-app
+    # tty: true
+    ports:
+      - "8081:8081"
+      - '19006:19006'
+      - '19001:19001'
+      - '19002:19002'
+    environment:
+      - NODE_ENV=development
+      - EXPO_PUBLIC_API_URL=http://backend:8080
+    depends_on:
+      - backend
+    volumes:
+      - ./react_native_app:/opt/react_native_app/app:delegated
+      - ./react_native_app/package.json:/opt/react_native_app/package.json
+      - ./react_native_app/package-lock.json:/opt/react_native_app/package-lock.json
+      - notused:/opt/react_native_app/app/node_modules
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  notused:
